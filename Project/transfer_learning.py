@@ -23,10 +23,9 @@ content_layers = ['block5_conv2']
 
 # Style layer of interest
 style_layers = ['block2_conv1',
-                'block3_conv1']
-#'block3_conv1',
-#'block4_conv1',
-#'block5_conv1']
+                'block3_conv1',
+'block4_conv1',
+'block5_conv1']
 
 num_content_layers = len(content_layers)
 num_style_layers = len(style_layers)
@@ -121,16 +120,14 @@ def process_img(SEARCH_DIR=None,from_file=None, shape=(256, 256)):
         out = []
         li=getListOfFiles(SEARCH_DIR)
         print(li)
-        #li = os.listdir(SEARCH_DIR)
-        #print(li)
+
         for i in li:
             p = os.path.join(SEARCH_DIR, i)
-            #print('p = ',p)
             img = load_img(p, target_size=shape)
             img=img_to_array(img)
             img = tf.cast(img, dtype=tf.float32)
             out.append(img)
-        #print(out)
+
     else:
         img=load_img(from_file,target_size=shape)
         img=img_to_array(img)
@@ -139,7 +136,7 @@ def process_img(SEARCH_DIR=None,from_file=None, shape=(256, 256)):
 
     return tf.convert_to_tensor(out), li
 
-flatten=tf.keras.layers.Flatten()  # layer to flatten the input tensor
+flatten=tf.keras.layers.Flatten()
 
 def similarity_matric(sim,target_img,TOTAL_FEATURE_MAPS):
   cs=0
@@ -170,7 +167,7 @@ def extract_image_from_pickle(PATH):
   return target_input,list(range(len(w_images)))
 
 
-def sorted_result_Json(SEARCH_PATH=None, DIR_PATH=None, pickle_file_path=None, search_index=0, resize_shape=(256, 256)):
+def sorted_result_Json(SEARCH_PATH=None, DIR_PATH=None, pickle_file_path=None, search_index=0, resize_shape=(256, 256),progress_func=None):
     if SEARCH_PATH:
         search_input = process_img(None,SEARCH_PATH,resize_shape)
     if DIR_PATH:
@@ -178,19 +175,19 @@ def sorted_result_Json(SEARCH_PATH=None, DIR_PATH=None, pickle_file_path=None, s
 
     li = []
 
-    if pickle_file_path is not None and DIR_PATH is None:
-        target_input, index_list = extract_image_from_pickle(pickle_file_path)
-        if (SEARCH_PATH is None):
-            search_input = target_input[search_index][tf.newaxis, ...]
 
-    search_tensor = inception_classifier(search_input)
-    target_tensor = inception_classifier(target_input)
+    #print('length of index list = ',len(index_list))
+    for x in range(0,len(index_list),10):
+        search_tensor = inception_classifier(search_input)
+        target_tensor = inception_classifier(target_input)
 
-    sml = similarity_matric(search_tensor, target_tensor, TOTAL_FEATURE_MAPS)
-    for i, j in zip(sml, index_list):
-        li.append({'path': j, 'value': i})
+        sml = similarity_matric(search_tensor, target_tensor, TOTAL_FEATURE_MAPS)
+        for i, j in zip(sml, index_list[x:x+10]):
+            li.append({'path': j, 'value': i})
+        progress_func.emit((x / len(index_list)) * 100)
 
     dic = sorted(li, key=lambda i: i['value'], reverse=True)
+    progress_func.emit(100)
 
     return dic
 
@@ -204,41 +201,17 @@ def sorted_paint_result_Json(SEARCH_PATH=None, DIR_PATH=None, pickle_file_path=N
 
     li = []
 
-    if pickle_file_path is not None and DIR_PATH is None:
-        target_input, index_list = extract_image_from_pickle(pickle_file_path)
-        if (SEARCH_PATH is None):
-            search_input = target_input[search_index][tf.newaxis, ...]
-    #print('result = ',len(target_input),len(index_list))
     for x in range(0,len(index_list),10):
         search_tensor = painting_extractor(search_input)
         target_tensor = painting_extractor(target_input[x:x+10])
-        progress_func.emit((x/len(index_list))*100)
         cs, ss = painting_similarity_matric(search_tensor, target_tensor)
+
         for i, j, k in zip(index_list[x:x+10], ss, cs):
             li.append({'path': i, 'style': j, 'content': k})
-
+        progress_func.emit((x / len(index_list)) * 100)
 
     dic = sorted(li, key=lambda i: i['style'], reverse=False)
+    progress_func.emit(100)
 
     return dic
 
-def main():
-    if search_image_path:
-
-        if pickle_file_path:
-
-            if search_image_path is None:
-                if (search_index in None):
-                    raise Exception("search_index is necessary")
-                else:
-                    if from_painting==True:
-                        return sorted_result_Json(pickle_file_path=pickle_file_path, search_index=search_index)
-            else:
-                return sorted_result_Json(SEARCH_PATH=search_image_path, pickle_file_path=pickle_file_path)
-
-    if target_dir_path:
-        return sorted_result_Json(SEARCH_PATH=search_image_path, DIR_PATH=target_dir_path)
-
-#print(sorted_result_Json(SEARCH_PATH='D:/AAA_BOOKS/PSC/Project/New folder/test1.jpg',DIR_PATH='D:/AAA_BOOKS/PSC/Project/New folder'))
-
-#print(sorted_paint_result_Json(SEARCH_PATH='D:/AAA_BOOKS/PSC/Project/New folder/TEST/20170215_110928.jpg',DIR_PATH='D:/AAA_BOOKS/PSC/Project/New folder/TEST'))
