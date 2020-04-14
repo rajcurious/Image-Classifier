@@ -18,7 +18,7 @@ We have made a app to find similar image to a given image among the list of imag
 <li>In VGG we introduced  customization through outputing middle layers along with final layer to extract style.so we can filter the search result with style similarity and content similarity .The example depicted below is using style extraction using this model
 </li></ul>
 
-<h3>this is the target image:</h3>
+<h3>This is the target image:</h3>
 <img src="images/001_0007.jpg">
 
 
