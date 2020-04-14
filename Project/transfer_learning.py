@@ -148,23 +148,6 @@ def similarity_matric(sim,target_img,TOTAL_FEATURE_MAPS):
   return sum(cs)/TOTAL_FEATURE_MAPS
 
 
-import pickle as pkl
-def extract_image_from_pickle(PATH):
-  with open(PATH,"rb") as watch_images:
-    w_images=pkl.load(watch_images)
-
-  li=[]
-  for i in w_images:
-    img=i.resize((256,256))
-    img=img_to_array(img)
-    img=tf.cast(img,dtype=tf.float32)
-    li.append(img)
-
-
-  target_input=tf.convert_to_tensor(li)
-
-
-  return target_input,list(range(len(w_images)))
 
 
 def sorted_result_Json(SEARCH_PATH=None, DIR_PATH=None, pickle_file_path=None, search_index=0, resize_shape=(256, 256),progress_func=None):
